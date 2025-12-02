@@ -3,6 +3,7 @@ spawn-sh-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
 spawn-at-startup "swww-daemon"
 spawn-at-startup "waybar"
 spawn-at-startup "sh" "-c" "vicinae server &"
+// spawn-at-startup "niri-switch-daemon"
 
 // General Settings
 prefer-no-csd
@@ -57,12 +58,14 @@ binds {
 
     // Application Shortcuts
     MOD+RETURN                          hotkey-overlay-title="Open Terminal: alacritty" { spawn-sh "alacritty"; }
+    MOD+ALT+RETURN                      hotkey-overlay-title="Open Terminal: kitty" { spawn-sh "kitty"; }
+    MOD+SHIFT+B                         hotkey-overlay-title="Open Secondary Browser: chrome" { spawn-sh "google-chrome-stable --enable-features=TouchpadOverscrollHistoryNavigation"; }
+    MOD+SHIFT+Q                         hotkey-overlay-title="Lock Screen: gtklock" { spawn-sh "gtklock"; }
     MOD+A                               hotkey-overlay-title="Open App Launcher: vicinae" { spawn-sh "vicinae toggle"; }
     MOD+B                               hotkey-overlay-title="Open Browser: firefox" { spawn-sh "firefox-developer-edition"; }
-    MOD+SHIFT+B                         hotkey-overlay-title="Open Secondary Browser: chrome" { spawn-sh "google-chrome-stable --enable-features=TouchpadOverscrollHistoryNavigation"; }
-    MOD+ALT+L                           hotkey-overlay-title="Lock Screen: swaylock" { spawn-sh "swaylock"; }
     MOD+E                               hotkey-overlay-title="File Manager: Thunar" { spawn-sh "thunar"; }
-    MOD+W                               hotkey-overlay-title="Open Wallpaper Selector: rofi" { spawn-sh "$HOME/.config/rofi/bgselector/bgselector.sh"; }
+    MOD+ALT+E                           hotkey-overlay-title="File Manager: Yazi" { spawn-sh "yazi"; }
+    MOD+W                               hotkey-overlay-title="Open Wallpaper Selector" { spawn-sh "$HOME/.config/scripts/bgselector.sh"; }
 
     // Media Keys
     XF86AudioRaiseVolume                allow-when-locked=true { spawn-sh "mediactl volume_up"; }
@@ -79,25 +82,26 @@ binds {
     // Window Management
     MOD+Q                               { close-window; }
 
-    // Window Movement and Focus
-    MOD+LEFT                            { focus-column-left; }
     MOD+H                               { focus-column-left; }
-    MOD+RIGHT                           { focus-column-right; }
-    MOD+L                               { focus-column-right; }
-    MOD+UP                              { focus-window-up; }
-    MOD+K                               { focus-workspace-up; }
-    MOD+DOWN                            { focus-window-down; }
     MOD+J                               { focus-workspace-down; }
+    MOD+K                               { focus-workspace-up; }
+    MOD+L                               { focus-column-right; }
+
+    MOD+LEFT                            { focus-column-left; }
+    MOD+DOWN                            { focus-window-down; }
+    MOD+UP                              { focus-window-up; }
+    MOD+RIGHT                           { focus-column-right; }
 
     // Move windows within workspace
     MOD+SHIFT+LEFT                      { move-column-left; }
-    MOD+SHIFT+H                         { move-column-left; }
-    MOD+SHIFT+RIGHT                     { move-column-right; }
-    MOD+SHIFT+L                         { move-column-right; }
-    MOD+SHIFT+UP                        { move-window-up; }
-    MOD+SHIFT+K                         { move-column-to-workspace-up; }
     MOD+SHIFT+DOWN                      { move-window-down; }
+    MOD+SHIFT+UP                        { move-window-up; }
+    MOD+SHIFT+RIGHT                     { move-column-right; }
+
+    MOD+SHIFT+H                         { move-column-left; }
     MOD+SHIFT+J                         { move-column-to-workspace-down; }
+    MOD+SHIFT+K                         { move-column-to-workspace-up; }
+    MOD+SHIFT+L                         { move-column-right; }
 
     // Move to workspace edges
     MOD+SHIFT+HOME                      { move-column-to-first; }
@@ -112,20 +116,30 @@ binds {
     MOD+CTRL+UP                         { focus-monitor-up; }
     MOD+CTRL+DOWN                       { focus-monitor-down; }
 
+    MOD+CTRL+H                          { focus-monitor-left; }
+    MOD+CTRL+L                          { focus-monitor-right; }
+    MOD+CTRL+K                          { focus-monitor-up; }
+    MOD+CTRL+J                          { focus-monitor-down; }
+
     // Move windows to different monitors
     MOD+SHIFT+CTRL+LEFT                 { move-column-to-monitor-left; }
     MOD+SHIFT+CTRL+RIGHT                { move-column-to-monitor-right; }
     MOD+SHIFT+CTRL+UP                   { move-column-to-monitor-up; }
     MOD+SHIFT+CTRL+DOWN                 { move-column-to-monitor-down; }
 
+    MOD+SHIFT+CTRL+H                    { move-column-to-monitor-left; }
+    MOD+SHIFT+CTRL+L                    { move-column-to-monitor-right; }
+    MOD+SHIFT+CTRL+K                    { move-column-to-monitor-up; }
+    MOD+SHIFT+CTRL+J                    { move-column-to-monitor-down; }
+
     // Workspace Management
     MOD+ESCAPE                          hotkey-overlay-title="Open Overview" repeat=false { toggle-overview; }
-    MOD+WHEELSCROLLDOWN                 cooldown-ms=150 { focus-workspace-down; }
-    MOD+WHEELSCROLLUP                   cooldown-ms=150 { focus-workspace-up; }
+    MOD+WHEELSCROLLDOWN                 cooldown-ms=100 { focus-workspace-down; }
+    MOD+WHEELSCROLLUP                   cooldown-ms=100 { focus-workspace-up; }
 
     // Move windows to different workspaces - using wheel matches K/J pattern
-    MOD+SHIFT+WHEELSCROLLDOWN           cooldown-ms=150 { move-column-to-workspace-down; }
-    MOD+SHIFT+WHEELSCROLLUP             cooldown-ms=150 { move-column-to-workspace-up; }
+    MOD+SHIFT+WHEELSCROLLDOWN           cooldown-ms=100 { move-column-to-workspace-down; }
+    MOD+SHIFT+WHEELSCROLLUP             cooldown-ms=100 { move-column-to-workspace-up; }
 
     // Column navigation with mouse
     MOD+WHEELSCROLLRIGHT                { focus-column-right; }
@@ -156,6 +170,7 @@ binds {
     MOD+SHIFT+9                         { move-column-to-workspace 9; }
 
     MOD+TAB                             { focus-workspace-previous; }
+    ALT+TAB                             { spawn "niri-switch"; }
 
     // Layout Controls
     MOD+C                               { center-column; }
@@ -172,14 +187,14 @@ binds {
     // Window Modes
     MOD+T                               { toggle-window-floating; }
     MOD+F                               { fullscreen-window; }
-    // MOD+W                               { toggle-column-tabbed-display; }
     MOD+M                               { maximize-column; }
+    // MOD+W                               { toggle-column-tabbed-display; }
 
     // Utils
     MOD+S                               { screenshot; }
     MOD+SHIFT+S                         { screenshot-screen write-to-disk=true; }
     MOD+CTRL+S                          { screenshot-window write-to-disk=true; }
-    MOD+P                               { spawn-sh "hyprpicker"; }
+    MOD+P                               { spawn-sh "pgrep -x hyprpicker >/dev/null || hyprpicker"; }
 
     // Application Restarts
     MOD+ALT+W                           { spawn "sh" "-c" "pgrep -x waybar >/dev/null && killall waybar || waybar &"; }
@@ -255,25 +270,11 @@ window-rule {
 }
 
 window-rule {
+    match app-id=r#"firefox"#
+    match app-id=r#"google-chrome"#
     match app-id=r#"code"#
-    open-maximized true
-}
-
-window-rule {
-    match app-id=r#"firefox$"#
-    open-maximized true
-}
-
-window-rule {
     match app-id=r#"obsidian$"#
     open-maximized true
-}
-
-window-rule {
-    match app-id=r#"protonvpn-app"#
-    open-floating true
-    min-width 400
-    min-height 600
 }
 
 // File dialogs - Open/Save/Select
@@ -407,3 +408,4 @@ environment {
     VDPAU_DRIVER "va_gl"
     LIBVA_DRIVER_NAME "iHD"
 }
+

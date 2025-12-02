@@ -37,7 +37,7 @@ kew/kewlibrary
 # System & Utilities
 nwg-look/
 nwg-displays/
-systemd/
+# systemd/
 balenaEtcher/
 yay/
 easyeffects/
@@ -57,6 +57,7 @@ qView/
 libvirt/
 gnome-boxes/
 deluge/
+AirPodsTrayApp/
 rustdesk/
 
 # Desktop Environment & Frameworks

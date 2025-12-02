@@ -34,7 +34,7 @@ icon-location=left
 format= <b>%s</b>\n%b
 text-alignment=left
 max-visible=5
-layer=top
+layer=overlay
 anchor=top-right
 
 default-timeout=5000
@@ -128,6 +128,7 @@ border-color=#F38BA8
 background-color=#1E1E2E
 text-color=#CDD6F4
 default-timeout=0
+layer=overlay
 
 # Hidden
 [hidden=true]

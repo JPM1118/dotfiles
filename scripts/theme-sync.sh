@@ -29,6 +29,11 @@ else
     echo -e "\\033[1;33m[$timestamp] WARN: $*\\033[0m" >&2
   }
 
+  log_debug() {
+    local -r timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "\\033[1;36m[$timestamp] DEBUG: $*\\033[0m" >&2
+  }
+
   die() {
     log_error "$*"
     exit 1
@@ -290,7 +295,6 @@ map_to_wallust_theme() {
 detect_theme_from_wallpaper() {
   log_info "Detecting theme from current wallpaper directory"
 
-  # Get current wallpaper from swww
   local wallpaper_path
   wallpaper_path=$(swww query 2> /dev/null | grep -oP '(?<=image: ).*' | head -n1 | tr -d '\n\r')
 
@@ -304,31 +308,28 @@ detect_theme_from_wallpaper() {
 
   log_debug "Found wallpaper: $wallpaper_path"
 
-  # Extract theme from directory path (e.g., /path/to/Wallpapers/Catppuccin/Dark/file.jpg -> Catppuccin)
   local theme_dir
   theme_dir=$(dirname "$wallpaper_path")
   local parent_dir
   parent_dir=$(dirname "$theme_dir")
 
-  # Get the theme name from the parent directory
   local theme_name
   theme_name=$(basename "$parent_dir" | tr '[:upper:]' '[:lower:]')
 
-  # Also get the variation (e.g., Dark or Light from the immediate directory)
   local variation
   variation=$(basename "$theme_dir" | tr '[:upper:]' '[:lower:]')
 
-  # Special case: 'osaka' should be treated as 'solarized'
   if [[ "$theme_name" == "osaka" ]]; then
     theme_name="solarized"
   fi
 
   log_debug "Detected theme: $theme_name, variation: $variation"
 
-  # Store the variation for later use
-  export WALLPAPER_VARIATION="$variation"
+  WALLPAPER_PATH="$wallpaper_path"
+  WALLPAPER_VARIATION="$variation"
+  DETECTED_THEME="$theme_name"
 
-  echo "$theme_name"
+  export WALLPAPER_PATH WALLPAPER_VARIATION
 }
 
 check_theme_changed() {
@@ -424,6 +425,7 @@ Net/IconThemeName "%s"
 
 update_gtk_settings() {
   local -r gtk_theme="$1"
+  local -r variation="$2"
 
   # Set the GTK theme using gsettings
   gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme" 2> /dev/null || {
@@ -431,7 +433,7 @@ update_gtk_settings() {
   }
 
   # Set color scheme based on variation
-  if [[ "$WALLPAPER_VARIATION" == "light" ]]; then
+  if [[ "$variation" == "light" ]]; then
     gsettings set org.gnome.desktop.interface color-scheme "prefer-light" 2> /dev/null || {
       log_warn "Failed to set light color scheme via gsettings"
     }
@@ -448,8 +450,12 @@ update_gtk_settings() {
   fi
 
   # Reload xsettingsd if running
-  if pgrep -x xsettingsd > /dev/null; then
-    pkill -HUP xsettingsd
+  if command -v pgrep > /dev/null 2>&1 && command -v pkill > /dev/null 2>&1; then
+    if pgrep -x xsettingsd > /dev/null; then
+      pkill -HUP xsettingsd
+    fi
+  else
+    log_warn "pgrep/pkill not available, skipping xsettingsd reload"
   fi
 }
 
@@ -498,6 +504,8 @@ manage_symlinks() {
 
 set_gtk_theme() {
   local -r gtk_theme="$1"
+  local -r variation="${2:-dark}"
+  local -r icon_theme="${3:-$DEFAULT_ICON_THEME}"
 
   log_info "Setting GTK theme to: $gtk_theme"
 
@@ -522,9 +530,9 @@ set_gtk_theme() {
   fi
 
   # Apply theme through multiple methods to ensure coverage
-  update_gtk_settings "$gtk_theme"
-  manage_gtk_config "3.0" "$gtk_theme" "$wallpaper_variation"
-  manage_gtk_config "4.0" "$gtk_theme" "$wallpaper_variation"
+  update_gtk_settings "$gtk_theme" "$variation"
+  manage_gtk_config "3.0" "$gtk_theme" "$variation"
+  manage_gtk_config "4.0" "$gtk_theme" "$variation"
   manage_symlinks "$gtk_theme"
   update_xsettingsd "$gtk_theme" "$icon_theme"
 
@@ -651,45 +659,28 @@ main() {
   log_info "Starting dynamic theme synchronization"
 
   # Validate dependencies
-  validate_dependencies "swww" "wallust" "gsettings" "jq"
+  validate_dependencies "swww" "wallust" "jq" "sed" "grep" "head" "tr"
 
   # Detect theme from current wallpaper
-  local detected_theme
-  detected_theme=$(detect_theme_from_wallpaper)
+  detect_theme_from_wallpaper
 
-  # First, detect theme and variation separately
-  local wallpaper_path
-  wallpaper_path=$(swww query 2> /dev/null | grep -oP '(?<=image: ).*' | head -n1 | tr -d '\n\r')
+  local detected_theme="${DETECTED_THEME:-}"
+  local wallpaper_path="${WALLPAPER_PATH:-}"
+  local wallpaper_variation="${WALLPAPER_VARIATION:-}"
 
-  if [[ -z "$wallpaper_path" ]]; then
-    die "No wallpaper detected from swww query"
+  if [[ -z "$detected_theme" ]]; then
+    die "Unable to determine theme from current wallpaper"
   fi
 
-  if [[ ! -f "$wallpaper_path" ]]; then
-    die "Wallpaper file does not exist: $wallpaper_path"
+  if [[ -z "$wallpaper_path" || ! -f "$wallpaper_path" ]]; then
+    die "Wallpaper file does not exist: ${wallpaper_path:-unknown}"
   fi
 
-  # Extract theme and variation from directory path
-  local theme_dir
-  theme_dir=$(dirname "$wallpaper_path")
-  local parent_dir
-  parent_dir=$(dirname "$theme_dir")
-
-  local detected_theme
-  detected_theme=$(basename "$parent_dir" | tr '[:upper:]' '[:lower:]')
-
-  local wallpaper_variation
-  wallpaper_variation=$(basename "$theme_dir" | tr '[:upper:]' '[:lower:]')
-
-  # Special case: 'osaka' should be treated as 'solarized'
-  if [[ "$detected_theme" == "osaka" ]]; then
-    detected_theme="solarized"
+  if [[ -z "$wallpaper_variation" ]]; then
+    die "Unable to determine wallpaper variation"
   fi
 
   log_info "Detected theme: $detected_theme, variation: $wallpaper_variation"
-
-  # Store the variation for functions that need access to it
-  export WALLPAPER_VARIATION="$wallpaper_variation"
 
   # Check if theme/variation changed
   local theme_changed=0
@@ -709,12 +700,16 @@ main() {
 
   # Only apply themes if theme/variation changed
   if [[ $theme_changed -eq 1 ]]; then
-    set_gtk_theme "$gtk_theme"
+    set_gtk_theme "$gtk_theme" "$wallpaper_variation" "$icon_theme"
     set_icon_theme "$icon_theme"
     run_wallust_theme "$wallust_theme" "$wallpaper_path"
     update_niri_config
     update_vscode_theme
-    makoctl reload 2> /dev/null || log_warn "Failed to reload mako"
+    if command -v makoctl > /dev/null 2>&1; then
+      makoctl reload 2> /dev/null || log_warn "Failed to reload mako"
+    else
+      log_warn "makoctl not available, skipping notification daemon reload"
+    fi
     save_theme_state "$detected_theme" "$wallpaper_variation"
 
     log_success "Dynamic theme synchronization completed successfully"
