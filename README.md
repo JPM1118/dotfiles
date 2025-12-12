@@ -17,12 +17,12 @@ curl -fsSL https://raw.githubusercontent.com/saatvik333/niri-dotfiles/main/insta
 ```
 
  **Important Requirements:**
-
+```
   Fresh or minimal Arch Linux installation recommended
   Active internet connection required
   Sudo privileges needed
   At least 5GB free disk space
-
+```
 What the Script Does
 
 The automated installer will:
