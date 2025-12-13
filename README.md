@@ -1,6 +1,9 @@
 # Niri WM Dotfiles
 
 Productive and clean niri configuration setup.
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b9221fe9-6e8f-4e26-b2a4-a67170512824" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c1184029-71d6-49a7-abb1-57661f738bad" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fba3cdae-5bbf-497c-b9f8-0cbd11c64d49" />
 
 ## Features
 
