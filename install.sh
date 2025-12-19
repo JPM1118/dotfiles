@@ -144,8 +144,8 @@ Usage: ${0##*/} [OPTIONS]
 Sevens-Dots Installer - Automated setup for Niri window manager configuration
 
 OPTIONS:
-  -h, --help     Display this help message and exit
-  -v, --version  Display version information
+  -h, --help      Display this help message and exit
+  -v, --version   Display version information
 
 DESCRIPTION:
   This script automates the installation and configuration of a complete
@@ -182,7 +182,7 @@ EOF
 }
 
 version() {
-  printf "Sevens-Dots Installer v2.0\n"
+  printf "Sevens-Dots Installer v2.1\n"
   printf "Defensive Bash Refactored Edition\n"
 }
 
@@ -829,16 +829,9 @@ install_gtk_themes() {
 }
 
 install_colloid_icons() {
-  local icons_installed=false
   local icon_dir="${HOME}/.icons"
 
-  if [[ -d "${icon_dir}/Colloid" ]] ||
-    [[ -d "${icon_dir}/Colloid-dark" ]] ||
-    [[ -d "${icon_dir}/Colloid-light" ]]; then
-    icons_installed=true
-  fi
-
-  if [[ "${icons_installed}" == "true" ]]; then
+  if [[ -d "${icon_dir}/Colloid" ]]; then
     msg "Colloid icon theme is already installed. Skipping..."
     return 0
   fi
@@ -861,6 +854,7 @@ install_colloid_icons() {
   fi
 
   info "Installing Colloid icon theme with all schemes (bold)..."
+  # -d ensures we install to ~/.icons and do NOT trigger a hidden sudo prompt
   if ! (cd "${icons_dir}" && ./install.sh -d "${HOME}/.icons" --scheme all --bold >> "${LOG_FILE}" 2>&1); then
     rm -rf "${icons_dir}"
     warn "Failed to install Colloid icon theme."
@@ -1262,13 +1256,13 @@ create_systemd_services() {
   create_gtklock_service "${service_dir}"
 
   systemctl --user daemon-reload >> "${LOG_FILE}" 2>&1 || warn "Failed to reload systemd daemon."
-  
+   
   printf "\n"
   info "gtklock service has been created but NOT enabled by default."
   info "To manually lock your screen: systemctl --user start gtklock"
   info "To enable autostart on login: systemctl --user enable gtklock"
   printf "\n"
-  
+   
   msg "Systemd services configured."
 }
 
@@ -1307,7 +1301,7 @@ print_header() {
   printf "${GREEN}${BOLD}"
   cat << "EOF"
 ════════════════════════════════════════════════════════════
-  SEVENS-DOTS - Installation Script
+  SEVENS-DOTS - Installation Script v2.1
   Automated setup for your Niri window manager configuration
 ════════════════════════════════════════════════════════════
 EOF
