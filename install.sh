@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-#
-# Sevens-Dots Installer - Refactored with Defensive Bash Principles
-# Version: 2.0
-#
+
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -25,7 +22,7 @@ AUR_HELPER=""
 
 # Progress tracking
 CURRENT_STEP=0
-readonly TOTAL_STEPS=19
+readonly TOTAL_STEPS=20
 
 # Installation summary tracking
 declare -a INSTALL_SUMMARY=()
@@ -408,6 +405,7 @@ check_optional_dependencies() {
     printf "  • Some users prefer PipeWire, others prefer PulseAudio\n"
     printf "  • Not everyone needs Bluetooth functionality\n"
     printf "  • You can install these manually later if needed\n"
+    printf "  • Waybar modules may show errors on first launch until backends are installed\n"
     printf "\n"
 
     local reply
@@ -418,6 +416,7 @@ check_optional_dependencies() {
       fatal "Installation cancelled by user. Please install required dependencies and re-run."
     fi
 
+    warn "Waybar modules may show errors on first launch - install backends to fix"
     msg "Continuing with installation (missing: ${warnings[*]})"
   else
     msg "All optional dependencies for waybar modules are installed."
@@ -554,7 +553,8 @@ choose_aur_helper() {
 install_yay() {
   info "Installing yay AUR helper..."
 
-  if sudo pacman -S --noconfirm yay >> "${LOG_FILE}" 2>&1; then
+  info "Attempting to install yay from official repository..."
+  if retry_command 2 sudo pacman -S --noconfirm yay >> "${LOG_FILE}" 2>&1; then
     msg "yay installed from official repository."
     return 0
   fi
@@ -587,6 +587,16 @@ install_yay() {
   fi
 }
 
+check_yay_linkage() {
+  if command -v yay &> /dev/null; then
+    if ldd "$(command -v yay)" | grep -q "not found"; then
+      warn "Detected broken shared library linkage in yay. Reinstalling."
+      sudo pacman -Rns --noconfirm yay-bin >> "${LOG_FILE}" 2>&1 || true
+      install_yay
+    fi
+  fi
+}
+
 install_pacman_packages() {
   info "Installing official repository packages..."
   info "This may take several minutes..."
@@ -604,7 +614,7 @@ cargo_fix() {
   # Check if rustup is installed
   if ! command -v rustup &> /dev/null; then
     info "rustup not found, installing..."
-    if sudo pacman -S --needed --noconfirm rustup >> "$LOG_FILE" 2>&1; then
+    if sudo pacman -S --needed --noconfirm rustup >> "${LOG_FILE}" 2>&1; then
       msg "rustup installed successfully."
     else
       warn "Failed to install rustup. Some AUR packages may fail to build."
@@ -614,7 +624,7 @@ cargo_fix() {
 
   # Set default toolchain to stable
   info "Setting Rust default toolchain to stable..."
-  if rustup default stable >> "$LOG_FILE" 2>&1; then
+  if rustup default stable >> "${LOG_FILE}" 2>&1; then
     msg "Rust toolchain configured: stable (default)"
   else
     warn "Failed to set default Rust toolchain. Some AUR packages may fail to build."
@@ -802,7 +812,7 @@ install_gtk_themes() {
   fi
 
   if [[ ${#installed_themes[@]} -gt 0 ]]; then
-    msg "Successfully installed ${#installed_themes[@]} GTK theme(s): ${installed_themes[*]}"
+    msg "Successfully installed ${#installed_themes[@]} GTK theme(s): $(IFS=' ' ; echo "${installed_themes[*]}")"
   fi
 
   if [[ ${#failed_themes[@]} -gt 0 ]]; then
@@ -851,7 +861,7 @@ install_colloid_icons() {
   fi
 
   info "Installing Colloid icon theme with all schemes (bold)..."
-  if ! (cd "${icons_dir}" && ./install.sh --scheme all --bold >> "${LOG_FILE}" 2>&1); then
+  if ! (cd "${icons_dir}" && ./install.sh -d "${HOME}/.icons" --scheme all --bold >> "${LOG_FILE}" 2>&1); then
     rm -rf "${icons_dir}"
     warn "Failed to install Colloid icon theme."
     return 1
@@ -1081,6 +1091,10 @@ set_default_shell() {
 
     if sudo pacman -S --needed --noconfirm "${shell_name}" >> "${LOG_FILE}" 2>&1; then
       selected_shell="$(command -v "${shell_name}")"
+      if [[ -z "${selected_shell}" ]]; then
+        error "Failed to locate ${shell_name} after installation."
+        return 1
+      fi
       msg "${shell_name} installed successfully."
     else
       error "Failed to install ${shell_name}."
@@ -1180,6 +1194,11 @@ create_symlinks() {
     if [[ -d "${DOTDIR}/${folder}" ]]; then
       local target="${CONFIG_DIR}/${folder}"
 
+      # Safety check for path validation
+      if [[ -z "${CONFIG_DIR}" ]] || [[ -z "${target}" ]]; then
+        fatal "Path validation failed: CONFIG_DIR or target is empty"
+      fi
+
       if [[ -e "${target}" ]] || [[ -L "${target}" ]]; then
         warn "Target still exists: ${folder} (removing)"
         rm -rf "${target}"
@@ -1243,6 +1262,13 @@ create_systemd_services() {
   create_gtklock_service "${service_dir}"
 
   systemctl --user daemon-reload >> "${LOG_FILE}" 2>&1 || warn "Failed to reload systemd daemon."
+  
+  printf "\n"
+  info "gtklock service has been created but NOT enabled by default."
+  info "To manually lock your screen: systemctl --user start gtklock"
+  info "To enable autostart on login: systemctl --user enable gtklock"
+  printf "\n"
+  
   msg "Systemd services configured."
 }
 
@@ -1281,7 +1307,7 @@ print_header() {
   printf "${GREEN}${BOLD}"
   cat << "EOF"
 ════════════════════════════════════════════════════════════
-  SEVENS-DOTS - Installation Script v2.0
+  SEVENS-DOTS - Installation Script
   Automated setup for your Niri window manager configuration
 ════════════════════════════════════════════════════════════
 EOF
@@ -1370,21 +1396,27 @@ main() {
   update_system
   add_summary "System packages updated"
 
-  step "AUR Helper Selection and Installation"
-  choose_aur_helper
-  add_summary "AUR helper configured: ${AUR_HELPER}"
-
+  # MOVED UP: Must install git/base-devel BEFORE attempting to build yay
   step "Installing Base Development Tools"
   install_base_tools
   add_summary "Base development tools installed (git, base-devel, curl)"
 
+  step "AUR Helper Selection and Installation"
+  choose_aur_helper
+  add_summary "AUR helper configured: ${AUR_HELPER}"
+
   step "Configuring Rust Toolchain"
-  cargo_fix
+  cargo_fix || warn "Proceeding without Rust toolchain - some AUR builds may fail"
   add_summary "Rust toolchain configured"
 
   step "Installing Official Repository Packages"
   install_pacman_packages
   add_summary "Official packages installed (niri, waybar, fish, etc.)"
+
+  # CRITICAL: This checks for the broken libalpm link before using yay
+  step "Checking broken yay"
+  check_yay_linkage
+  add_summary "Checked for yay linkage issues"
 
   step "Installing AUR Packages"
   install_aur_packages
