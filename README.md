@@ -67,6 +67,32 @@ curl -fsSL https://raw.githubusercontent.com/saatvik333/niri-dotfiles/main/insta
   At least 5GB free disk space
 ```
 
+### Pre-Install Snapshot (CachyOS / BTRFS)
+
+If you're on CachyOS or any Arch-based distro with BTRFS + Snapper, take a snapshot before running the installer. The script runs `pacman -Syu` and symlinks into `~/.config/`, so having a restore point is recommended.
+
+**Steps (in order):**
+
+1. **Update and reboot first** — Snapper can't roll back kernel updates, so get on the latest kernel before snapshotting:
+   ```bash
+   sudo pacman -Syu && reboot
+   ```
+
+2. **Create a Snapper snapshot:**
+   ```bash
+   sudo snapper create --type single --description "Before niri-dotfiles"
+   ```
+
+3. **Back up your home config** — Snapper's default config only covers `/` (root), not `/home`:
+   ```bash
+   cp -rL ~/.config ~/config-backup-$(date +%Y%m%d)
+   cp ~/.zshrc ~/.zshrc.manual-backup 2>/dev/null
+   ```
+
+4. **Run the install command** (see above).
+
+**To restore:** Boot into the snapshot from the Limine bootloader's Snapshots menu, then restore your home configs from the manual backup. See the [CachyOS BTRFS Snapshots wiki](https://wiki.cachyos.org/configuration/snapper/) for full documentation.
+
 What the Script Does
 
 The automated installer will:
