@@ -34,7 +34,7 @@ The central architectural concept is **wallpaper-driven dynamic theming** using 
 
 Template files use Wallust's `{{color0}}`–`{{color15}}` placeholders. Each template in `wallust/templates/` maps to a target path defined in `wallust/wallust.toml` under `[templates]`.
 
-**Apps receiving dynamic colors:** Alacritty, Kitty, Waybar, GTK3/4, VSCode, Rofi, Mako, Zathura, Vicinae, Neovim (via neopywal).
+**Apps receiving dynamic colors:** Ghostty, Alacritty, Kitty, Waybar, GTK3/4, VSCode, Rofi, Mako, Zathura, Vicinae, Neovim (via neopywal).
 
 ### Config Directory Layout
 
@@ -42,6 +42,7 @@ Each application has its own top-level directory. When installed, these get syml
 
 | Directory | Application | Config Format |
 |-----------|-------------|---------------|
+| `ghostty/` | Terminal (default) | INI-style (`config`) |
 | `niri/` | Window manager | KDL (`config.kdl`) |
 | `waybar/` | Status bar | JSONC + CSS |
 | `wallust/` | Theme engine | TOML + templates |

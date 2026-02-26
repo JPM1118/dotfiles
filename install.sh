@@ -36,7 +36,7 @@ SUDO_PID=""
 
 # Expected configuration folders in the repo
 readonly CONFIG_FOLDERS=(
-  niri waybar fish zsh fastfetch mako alacritty kitty starship
+  niri waybar fish zsh fastfetch mako alacritty kitty ghostty starship
   nvim yazi vicinae gtklock zathura wallust rofi scripts
 )
 
@@ -60,7 +60,7 @@ readonly AUR_PACKAGES=(
 
 # Official repository packages
 readonly PACMAN_PACKAGES=(
-  niri waybar fish fastfetch mako alacritty kitty starship neovim yazi
+  niri waybar fish fastfetch mako alacritty kitty ghostty starship neovim yazi
   zathura zathura-pdf-mupdf ttf-jetbrains-mono-nerd
   qt5-wayland qt6-wayland polkit-gnome ffmpeg imagemagick unzip jq
   gtklock rofi curl libnotify
@@ -903,7 +903,7 @@ verify_all_binaries() {
   info "Verifying all required binaries are installed..."
   local missing_binaries=()
   local binaries_to_check=(
-    niri waybar fish fastfetch mako alacritty kitty starship
+    niri waybar fish fastfetch mako alacritty kitty ghostty starship
     nvim yazi vicinae gtklock zathura wallust awww rofi
   )
 
