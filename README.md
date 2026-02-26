@@ -55,7 +55,7 @@ _Dynamic theming • Borderless layouts • Minimal_
 For Arch Linux and Arch-based distributions (Manjaro, EndeavourOS, etc.):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/saatvik333/niri-dotfiles/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/JPM1118/dotfiles/main/install.sh | sh
 ```
 
 **Important Requirements:**

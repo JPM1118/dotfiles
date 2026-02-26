@@ -10,7 +10,7 @@ Niri-dotfiles is a complete desktop environment configuration for the **Niri** s
 
 The project is installed via a single command that runs `install.sh`:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/saatvik333/niri-dotfiles/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/JPM1118/dotfiles/main/install.sh | sh
 ```
 
 There is no build system, test suite, or linter. The primary code artifact is `install.sh` (a ~1500-line Bash script) plus configuration files for various applications.
