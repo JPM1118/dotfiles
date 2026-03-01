@@ -18,7 +18,8 @@ window#waybar {
 #pulseaudio:hover,
 #pulseaudio.microphone:hover,
 #pulseaudio.sink-muted:hover,
-#custom-powermenu:hover {
+#custom-powermenu:hover,
+#custom-voxtype:hover {
   opacity: 0.5;
 }
 
@@ -35,7 +36,8 @@ window#waybar {
 #pulseaudio.microphone,
 #backlight,
 #battery,
-#custom-powermenu {
+#custom-powermenu,
+#custom-voxtype {
   color: @foreground;
   padding: 6px 0;
 }
@@ -125,4 +127,18 @@ tooltip * {
 }
 #backlight-slider highlight {
   background: @color3;
+}
+
+#custom-voxtype.idle {
+  color: @foreground;
+}
+#custom-voxtype.recording {
+  color: @color1;
+  animation: pulse 1s ease-in-out infinite;
+}
+#custom-voxtype.transcribing {
+  color: @color3;
+}
+#custom-voxtype.stopped {
+  color: @color8;
 }

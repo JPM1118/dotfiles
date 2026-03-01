@@ -9,20 +9,22 @@ prefer-no-csd
 screenshot-path "~/Pictures/Screenshots/%Y-%m-%d %H-%M-%S.png"
 
 output "eDP-1" {
-    mode "1920x1080@60.024"
-    scale 1
+    variable-refresh-rate on-demand=true
 }
 
 input {
     keyboard {
-        xkb {
+        repeat-delay 200
+	repeat-rate 35
+	xkb {
             layout "us"
             options "caps:escape"
         }
     }
 
     touchpad {
-        tap
+       // tap
+	dwt
         natural-scroll
     }
 
@@ -75,7 +77,7 @@ binds {
     XF86AudioMicMute                    allow-when-locked=true { spawn-sh "mediactl mic_mute"; }
     XF86AudioNext                       allow-when-locked=true { spawn-sh "mediactl next_track"; }
     XF86AudioPause                      allow-when-locked=true { spawn-sh "mediactl play_pause"; }
-    XF86AudioPlay                       allow-when-locked=true { spawn-sh "mediactl play_pausse"; }
+    XF86AudioPlay                       allow-when-locked=true { spawn-sh "mediactl play_pause"; }
     XF86AudioPrev                       allow-when-locked=true { spawn-sh "mediactl prev_track"; }
 
     // Window Management
@@ -203,7 +205,7 @@ binds {
 // Layout Settings
 layout {
     gaps 0
-    center-focused-column "on-overflow"
+    // center-focused-column "on-overflow"
     background-color "transparent"
 
     preset-column-widths {
@@ -214,12 +216,12 @@ layout {
 
     focus-ring {
         width 0
-        active-color "#1E1E2E"
+        active-color "#000000"
     }
 
     insert-hint {
         off
-        color "#1E1E2E"
+        color "#000000"
     }
 
     struts {}

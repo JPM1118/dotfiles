@@ -15,6 +15,7 @@
     "group/extras",
     "network",
     "bluetooth",
+    "custom/voxtype",
     "pulseaudio#microphone",
     "group/audio",
     "group/brightness",

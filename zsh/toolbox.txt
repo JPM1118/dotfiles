@@ -1,0 +1,95 @@
+[eza]
+desc: Modern ls replacement with colors, icons, and git integration
+cmd: eza -al --icons --group-directories-first
+
+[bat]
+desc: Cat clone with syntax highlighting and git integration
+cmd: bat README.md
+
+[fd]
+desc: Simple, fast alternative to find
+cmd: fd '\.conf$' /etc
+
+[fzf]
+desc: Fuzzy finder for files, history, and anything piped in
+cmd: fzf --preview 'bat --color=always {}'
+
+[ripgrep]
+desc: Blazing fast grep replacement (rg)
+cmd: rg 'TODO' --type rust
+
+[sd]
+desc: Intuitive find-and-replace (simpler than sed)
+cmd: sd 'old_text' 'new_text' file.txt
+
+[jq]
+desc: Command-line JSON processor and pretty-printer
+cmd: curl -s api.example.com | jq '.results[]'
+
+[glow]
+desc: Render markdown beautifully in the terminal
+cmd: glow README.md
+
+[dust]
+desc: Intuitive disk usage viewer (replaces du)
+cmd: dust -n 10
+
+[duf]
+desc: Better disk usage/free utility (replaces df)
+cmd: duf
+
+[yazi]
+desc: Blazing fast terminal file manager with image preview
+cmd: yazi
+
+[btop]
+desc: Resource monitor with CPU, memory, disks, and network
+cmd: btop
+
+[starship]
+desc: Minimal, fast, customizable shell prompt
+cmd: starship preset gruvbox-rainbow -o ~/.config/starship.toml
+
+[mise]
+desc: Polyglot runtime manager (replaces asdf, nvm, pyenv)
+cmd: mise use node@22
+
+[zoxide]
+desc: Smarter cd that learns your habits
+cmd: z <partial-path>
+
+[atuin]
+desc: Magical shell history with sync and fuzzy search
+cmd: atuin search <query>
+
+[delta]
+desc: Beautiful git diff viewer with syntax highlighting
+cmd: git diff | delta --side-by-side
+
+[lazygit]
+desc: Simple terminal UI for git commands
+cmd: lazygit
+
+[zellij]
+desc: Terminal multiplexer (modern tmux alternative)
+cmd: zellij
+
+[just]
+desc: Handy command runner (modern make alternative)
+cmd: just --list
+
+[procs]
+desc: Modern replacement for ps with color and search
+cmd: procs --tree
+
+[xh]
+desc: Friendly HTTP client (like httpie, replaces curl for APIs)
+cmd: xh GET https://httpbin.org/json
+
+[yq]
+desc: jq but for YAML, TOML, and XML files
+cmd: yq '.services' docker-compose.yml
+
+[lazydocker]
+desc: Simple terminal UI for Docker containers and images
+cmd: lazydocker

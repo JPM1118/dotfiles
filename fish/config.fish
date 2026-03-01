@@ -196,3 +196,5 @@ set -gx GOPATH $HOME/go
 set -gx PATH $GOPATH/bin $PATH
 set -gx CARGO_HOME $HOME/.cargo
 set -gx PATH $CARGO_HOME/bin $PATH
+# peon-ping quick controls
+function peon; bash /home/action-jackson/.claude/hooks/peon-ping/peon.sh $argv; end
