@@ -22,7 +22,7 @@ AUR_HELPER=""
 
 # Progress tracking
 CURRENT_STEP=0
-readonly TOTAL_STEPS=20
+readonly TOTAL_STEPS=17
 
 # Installation summary tracking
 declare -a INSTALL_SUMMARY=()
@@ -36,34 +36,29 @@ SUDO_PID=""
 
 # Expected configuration folders in the repo
 readonly CONFIG_FOLDERS=(
-  niri waybar fish zsh fastfetch mako alacritty kitty ghostty starship
-  nvim yazi vicinae gtklock zathura wallust rofi scripts
+  niri fish zsh fastfetch alacritty kitty ghostty starship
+  nvim yazi zathura scripts
 )
-
-# Optional dependencies that waybar modules depend on
-readonly OPTIONAL_AUDIO_PACKAGES=("pulseaudio" "pipewire-pulse")
-readonly OPTIONAL_BLUETOOTH_PACKAGES=("bluez" "bluez-utils")
 
 # AUR packages to install
 readonly AUR_PACKAGES=(
-  vicinae-bin
-  wallust
+  dms-shell-bin
+  matugen
+  cliphist
   dust
   eza
-  niri-switch
   ttf-nerd-fonts-symbols
   pavucontrol
   thunar
   minizip
-  awww-git
 )
 
 # Official repository packages
 readonly PACMAN_PACKAGES=(
-  niri waybar fish fastfetch mako alacritty kitty ghostty starship neovim yazi
+  niri fish fastfetch alacritty kitty ghostty starship neovim yazi
   zathura zathura-pdf-mupdf ttf-jetbrains-mono-nerd
-  qt5-wayland qt6-wayland polkit-gnome ffmpeg imagemagick unzip jq
-  gtklock rofi curl libnotify
+  qt5-wayland qt6-wayland wl-clipboard ffmpeg imagemagick unzip jq
+  curl libnotify cava
 )
 
 # ==========================
@@ -355,72 +350,8 @@ check_sudo() {
 }
 
 check_optional_dependencies() {
-  info "Checking optional dependencies for waybar modules..."
-
-  local missing_audio=true
-  local missing_bluetooth=true
-  local warnings=()
-
-  # Check for audio backend
-  for pkg in "${OPTIONAL_AUDIO_PACKAGES[@]}"; do
-    if pacman -Qi "${pkg}" &> /dev/null; then
-      missing_audio=false
-      break
-    fi
-  done
-
-  # Check for Bluetooth backend
-  for pkg in "${OPTIONAL_BLUETOOTH_PACKAGES[@]}"; do
-    if pacman -Qi "${pkg}" &> /dev/null; then
-      missing_bluetooth=false
-      break
-    fi
-  done
-
-  # Display warnings if dependencies are missing
-  if [[ "${missing_audio}" == "true" ]] || [[ "${missing_bluetooth}" == "true" ]]; then
-    printf "\n"
-    warn "Missing optional dependencies detected:"
-    printf "\n"
-
-    if [[ "${missing_audio}" == "true" ]]; then
-      warnings+=("Audio backend (PulseAudio/PipeWire)")
-      printf "${YELLOW}⚠${NC}  ${BOLD}Audio Backend:${NC} Not detected\n"
-      printf "   Waybar's audio module will not display.\n"
-      printf "   Install one of: ${CYAN}pulseaudio${NC} or ${CYAN}pipewire-pulse${NC}\n"
-      printf "   Example: ${CYAN}sudo pacman -S pipewire-pulse${NC}\n"
-      printf "\n"
-    fi
-
-    if [[ "${missing_bluetooth}" == "true" ]]; then
-      warnings+=("Bluetooth backend (bluez)")
-      printf "${YELLOW}⚠${NC}  ${BOLD}Bluetooth Backend:${NC} Not detected\n"
-      printf "   Waybar's Bluetooth module will not display.\n"
-      printf "   Install: ${CYAN}bluez bluez-utils${NC}\n"
-      printf "   Example: ${CYAN}sudo pacman -S bluez bluez-utils${NC}\n"
-      printf "\n"
-    fi
-
-    printf "${BLUE}${BOLD}Note:${NC} These are workflow-dependent choices:\n"
-    printf "  • Some users prefer PipeWire, others prefer PulseAudio\n"
-    printf "  • Not everyone needs Bluetooth functionality\n"
-    printf "  • You can install these manually later if needed\n"
-    printf "  • Waybar modules may show errors on first launch until backends are installed\n"
-    printf "\n"
-
-    local reply
-    read -r -p "Continue installation without these optional dependencies? (Y/n): " reply < /dev/tty
-    printf "\n"
-
-    if [[ "${reply}" =~ ^[Nn]$ ]]; then
-      fatal "Installation cancelled by user. Please install required dependencies and re-run."
-    fi
-
-    warn "Waybar modules may show errors on first launch - install backends to fix"
-    msg "Continuing with installation (missing: ${warnings[*]})"
-  else
-    msg "All optional dependencies for waybar modules are installed."
-  fi
+  info "Checking optional dependencies for DMS..."
+  msg "DMS handles audio/notification/theming dependencies internally."
 }
 
 verify_binary() {
@@ -903,8 +834,8 @@ verify_all_binaries() {
   info "Verifying all required binaries are installed..."
   local missing_binaries=()
   local binaries_to_check=(
-    niri waybar fish fastfetch mako alacritty kitty ghostty starship
-    nvim yazi vicinae gtklock zathura wallust awww rofi
+    niri fish fastfetch alacritty kitty ghostty starship
+    nvim yazi zathura dms matugen
   )
 
   for binary in "${binaries_to_check[@]}"; do
@@ -1242,54 +1173,23 @@ install_wallpapers() {
 # ==========================
 
 create_systemd_services() {
-  info "Niri handles autostart via its config file."
-  info "The following services are started by niri.conf:"
-  printf "  - polkit-gnome-authentication-agent\n"
-  printf "  - awww-daemon\n"
-  printf "  - waybar\n"
-  printf "  - vicinae server\n"
-  printf "\n"
-  info "Creating gtklock service for manual/idle trigger only..."
+  info "Setting up DMS (Dank Material Shell)..."
 
-  local service_dir="${HOME}/.config/systemd/user"
-  mkdir -p "${service_dir}"
-  create_gtklock_service "${service_dir}"
+  # Run DMS setup (non-interactive with defaults)
+  if verify_binary dms; then
+    info "Running DMS initial setup..."
+    echo -e "1\n1\n1\ny" | dms setup >> "${LOG_FILE}" 2>&1 || warn "DMS setup had issues. Run 'dms setup' manually."
+    msg "DMS setup completed."
 
-  systemctl --user daemon-reload >> "${LOG_FILE}" 2>&1 || warn "Failed to reload systemd daemon."
-   
-  printf "\n"
-  info "gtklock service has been created but NOT enabled by default."
-  info "To manually lock your screen: systemctl --user start gtklock"
-  info "To enable autostart on login: systemctl --user enable gtklock"
-  printf "\n"
-   
-  msg "Systemd services configured."
-}
-
-create_gtklock_service() {
-  local service_dir="$1"
-
-  if ! verify_binary gtklock; then
-    warn "gtklock binary not found, skipping service creation"
-    return
+    info "Enabling DMS systemd service..."
+    systemctl --user enable dms >> "${LOG_FILE}" 2>&1 || warn "Failed to enable DMS service."
+    msg "DMS service enabled."
+  else
+    warn "DMS binary not found. Run 'dms setup' manually after installation."
   fi
 
-  local gtklock_bin
-  gtklock_bin="$(command -v gtklock)"
-
-  cat > "${service_dir}/gtklock.service" << EOF
-[Unit]
-Description=GTKLock Screen Locker
-Documentation=man:gtklock(1)
-
-[Service]
-Type=simple
-ExecStart=${gtklock_bin}
-Restart=no
-EOF
-
-  info "Created: gtklock.service (manual trigger only)"
-  info "Note: gtklock will NOT autostart. Trigger it via 'systemctl --user start gtklock'"
+  systemctl --user daemon-reload >> "${LOG_FILE}" 2>&1 || warn "Failed to reload systemd daemon."
+  msg "Systemd services configured."
 }
 
 # ==========================
@@ -1301,8 +1201,8 @@ print_header() {
   printf "${GREEN}${BOLD}"
   cat << "EOF"
 ════════════════════════════════════════════════════════════
-  SEVENS-DOTS - Installation Script v2.1
-  Automated setup for your Niri window manager configuration
+  SEVENS-DOTS - Installation Script v3.0
+  Automated setup for Niri + Dank Material Shell
 ════════════════════════════════════════════════════════════
 EOF
   printf "${NC}"
@@ -1339,9 +1239,9 @@ EOF
   printf "  3. Log in to start using your new setup\n"
   printf "\n"
   printf "${BLUE}${BOLD}Important Notes:${NC}\n"
-  printf "  • Services are auto-started by niri.conf, not systemd\n"
-  printf "  • awww-daemon, waybar, vicinae, and polkit start automatically\n"
-  printf "  • gtklock can be triggered manually or via idle timeout\n"
+  printf "  • DMS (Dank Material Shell) provides bar, notifications, launcher, lock screen, and theming\n"
+  printf "  • DMS is managed via systemd user service (auto-starts with graphical session)\n"
+  printf "  • Run 'dms doctor' to verify DMS health after first login\n"
   printf "\n"
 
   if [[ -d "${BACKUP_DIR}" ]] && [[ -n "$(ls -A "${BACKUP_DIR}" 2> /dev/null)" ]]; then
@@ -1384,7 +1284,7 @@ main() {
 
   step "Checking Optional Dependencies"
   check_optional_dependencies
-  add_summary "Optional dependencies checked (audio/Bluetooth backends)"
+  add_summary "Optional dependencies checked"
 
   step "System Update"
   update_system
@@ -1405,7 +1305,7 @@ main() {
 
   step "Installing Official Repository Packages"
   install_pacman_packages
-  add_summary "Official packages installed (niri, waybar, fish, etc.)"
+  add_summary "Official packages installed (niri, fish, ghostty, etc.)"
 
   # CRITICAL: This checks for the broken libalpm link before using yay
   step "Checking broken yay"
@@ -1414,15 +1314,7 @@ main() {
 
   step "Installing AUR Packages"
   install_aur_packages
-  add_summary "AUR packages installed (vicinae, wallust)"
-
-  step "Installing GTK Themes"
-  install_gtk_themes
-  add_summary "GTK themes installed (Colloid, Rose-Pine, Osaka)"
-
-  step "Installing Icon Themes"
-  install_icon_themes
-  add_summary "Icon themes installed (Colloid icons)"
+  add_summary "AUR packages installed (dms-shell-bin, matugen, cliphist)"
 
   step "Verifying Installed Binaries"
   verify_all_binaries
@@ -1456,9 +1348,9 @@ main() {
   install_wallpapers
   add_summary "Wallpapers installed to ~/Pictures/Wallpapers"
 
-  step "Configuring System Services"
+  step "Configuring DMS and System Services"
   create_systemd_services
-  add_summary "Systemd services configured"
+  add_summary "DMS configured and systemd service enabled"
 
   print_summary
 }

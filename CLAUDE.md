@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Niri-dotfiles is a complete desktop environment configuration for the **Niri** scrollable-tiling Wayland compositor on Arch Linux. It provides preconfigured applications, dynamic wallpaper-based theming, and an automated installer. Version 2.1.
+Niri-dotfiles is a complete desktop environment configuration for the **Niri** scrollable-tiling Wayland compositor on Arch Linux, using **Dank Material Shell (DMS)** as the integrated desktop shell. DMS replaces the previous discrete components (waybar, mako, rofi, gtklock, wallust, awww, vicinae) with a single all-in-one system. Version 3.0.
 
 ## Installation
 
@@ -20,21 +20,48 @@ There is no build system, test suite, or linter. The primary code artifact is `i
 - **install.sh**: Test with `bash -n install.sh` for syntax checking. The script uses `set -Eeuo pipefail` and requires an Arch-based system to run.
 - **Shell scripts**: Use `shellcheck scripts/*.sh` if shellcheck is available.
 - **Niri config**: Validate with `niri validate` after changes to `niri/config.kdl`.
+- **DMS health**: Run `dms doctor` to check DMS status.
 
 ## Architecture
 
-### Dynamic Theming System
+### Dank Material Shell (DMS)
 
-The central architectural concept is **wallpaper-driven dynamic theming** using [Wallust](https://codeberg.org/explosion-mental/wallust):
+DMS is the central desktop shell providing:
+- **Status bar** (replaces waybar)
+- **Notifications** (replaces mako) — toggle with MOD+N
+- **Application launcher** (replaces rofi/vicinae) — spotlight at MOD+Space
+- **Lock screen** (replaces gtklock) — MOD+Alt+L
+- **Wallpaper management** (replaces awww) — MOD+Y
+- **Dynamic theming** (replaces wallust) — via matugen (Material You color generation)
+- **Clipboard manager** — MOD+V
+- **Task manager** — MOD+M
+- **Settings panel** — MOD+Comma
 
-1. User selects a wallpaper (via `scripts/bgselector.sh` → rofi → awww)
-2. Wallust extracts colors from the wallpaper image
-3. Wallust renders **template files** (`wallust/templates/`) into each app's config directory
-4. `scripts/theme-sync.sh` orchestrates the full sync (runs wallust, reloads apps)
+DMS is managed as a systemd user service (`systemctl --user status dms`). It generates niri configuration fragments in `~/.config/niri/dms/` which are included by the main config.
 
-Template files use Wallust's `{{color0}}`–`{{color15}}` placeholders. Each template in `wallust/templates/` maps to a target path defined in `wallust/wallust.toml` under `[templates]`.
+### DMS-Generated Files (not tracked in git)
 
-**Apps receiving dynamic colors:** Ghostty, Alacritty, Kitty, Waybar, GTK3/4, VSCode, Rofi, Mako, Zathura, Vicinae, Neovim (via neopywal).
+DMS auto-generates these files at runtime:
+- `niri/dms/*.kdl` — layout, colors, binds, alttab, cursor, windowrules, outputs
+- `alacritty/colors.toml` — terminal colors
+- `kitty/colors.conf` — terminal colors
+- `ghostty/themes/dankcolors` — terminal theme
+- `DankMaterialShell/` — DMS internal state
+
+These are listed in `.gitignore` and should not be committed.
+
+### Niri Config Structure
+
+The niri config (`niri/config.kdl`) uses KDL format and is structured as:
+1. **DMS includes** at the top (colors, layout, binds, alttab, cursor, windowrules, outputs)
+2. **User overrides** below (input prefs, custom keybinds, window rules, animations, environment)
+
+User binds that differ from DMS defaults are placed after the includes so they take precedence. Key differences from DMS defaults:
+- MOD+J/K → workspace navigation (not window focus within column)
+- MOD+Escape → overview (not MOD+D)
+- MOD+Tab → previous workspace (not overview)
+- MOD+Return → terminal (DMS uses MOD+T)
+- MOD+Shift+M → maximize column (DMS uses MOD+M for task manager)
 
 ### Config Directory Layout
 
@@ -42,46 +69,39 @@ Each application has its own top-level directory. When installed, these get syml
 
 | Directory | Application | Config Format |
 |-----------|-------------|---------------|
-| `ghostty/` | Terminal (default) | INI-style (`config`) |
 | `niri/` | Window manager | KDL (`config.kdl`) |
-| `waybar/` | Status bar | JSONC + CSS |
-| `wallust/` | Theme engine | TOML + templates |
-| `scripts/` | Utility scripts | Bash |
+| `ghostty/` | Terminal (default) | INI-style (`config`) |
+| `alacritty/` | Terminal | TOML |
+| `kitty/` | Terminal | Conf |
 | `nvim/` | Neovim (LazyVim) | Lua |
-| `rofi/` | App launcher | Rasi |
-| `shells/fish/`, `shells/zsh/` | Shell configs | Fish/Zsh |
-| `terminal_emulators/alacritty/`, `terminal_emulators/kitty/` | Terminals | TOML/Conf |
-| `prompt/starship/` | Shell prompt | TOML |
-| `notifications/mako/` | Notifications | Conf |
-| `screen_lock/gtklock/` | Lock screen | INI + CSS |
-| `file_managers/yazi/` | File manager | TOML |
-| `pdf_viewer/zathura/` | PDF viewer | Custom |
-| `system_info/fastfetch/` | System info | JSONC |
-| `menu_launcher/vicinae/` | App menu | JSON |
+| `fish/` | Fish shell | Fish |
+| `zsh/` | Zsh shell | Zsh |
+| `starship/` | Shell prompt | TOML |
+| `fastfetch/` | System info | JSONC |
+| `yazi/` | File manager | TOML |
+| `zathura/` | PDF viewer | Custom |
+| `scripts/` | Utility scripts | Bash |
 | `systemd/` | User services | Systemd unit |
 
 ### Scripts
 
-All utility scripts live in `scripts/` and share common logging via `scripts/lib/common.sh` (source it for `log_info`, `log_error`, `log_success`, `log_warn`, `log_debug`, `die`).
+Utility scripts in `scripts/` share common logging via `scripts/lib/common.sh` (source it for `log_info`, `log_error`, `log_success`, `log_warn`, `log_debug`, `die`).
 
-- **theme-sync.sh** — Orchestrates wallpaper → color extraction → app reload
-- **bgselector.sh** — Wallpaper picker with thumbnail caching via rofi
-- **media-control.sh** — Volume/brightness/playback wrapper (wpctl, brightnessctl)
 - **low-battery-notify.sh** — Battery warning via systemd timer
 - **git-cleanup.sh** — Git maintenance
 
 ### install.sh Structure
 
-The installer is a single Bash script with 20 sequential steps:
+The installer is a single Bash script with 17 sequential steps:
 - Pre-flight checks (not root, Arch-based, disk space, internet)
 - System update, base tools, AUR helper setup (yay/paru)
 - Rust toolchain via rustup
-- Package installation (pacman + AUR)
-- GTK/icon theme installation (Colloid, Rose-Pine, Osaka)
+- Package installation (pacman + AUR including dms-shell-bin, matugen, cliphist)
 - Shell selection (Fish/Zsh), dotfiles clone, symlink creation
-- Systemd user services, wallpaper submodule
+- DMS setup and systemd service enablement
+- Wallpaper submodule installation
 
-Key constants are at the top: `REPO_URL`, `DOTDIR`, `CONFIG_DIR`, `PACMAN_PACKAGES`, `AUR_PACKAGES`, `CONFIG_FOLDERS`. The script uses comprehensive error handling with a cleanup trap and retry logic for network operations.
+Key constants are at the top: `REPO_URL`, `DOTDIR`, `CONFIG_DIR`, `PACMAN_PACKAGES`, `AUR_PACKAGES`, `CONFIG_FOLDERS`.
 
 ### Wallpapers
 
@@ -91,5 +111,6 @@ Wallpapers are a **git submodule** at `wallpapers/` pointing to a separate repos
 
 - Bash scripts use `set -Eeuo pipefail` with `IFS=$'\n\t'`
 - Niri config uses KDL format (not TOML/JSON)
-- Waybar uses split config: `config.jsonc` (layout) + `modules.json` (module definitions) + `style.css` + `colors.css` (dynamic from wallust)
 - The MOD key is Super/Windows throughout niri keybindings
+- DMS-generated files are excluded from version control via `.gitignore`
+- Terminal color files are generated at runtime by DMS/matugen, not stored in the repo

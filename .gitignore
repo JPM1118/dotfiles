@@ -90,6 +90,15 @@ pulse/
 Electron/
 Notion/
 
+# DMS-generated runtime files
+DankMaterialShell/
+niri/dms/
+
+# DMS/matugen-generated terminal color files
+alacritty/colors.toml
+ghostty/themes/
+kitty/colors.conf
+
 *.env
 *.swp.*
 temp.md
